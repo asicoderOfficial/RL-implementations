@@ -1,0 +1,9 @@
+name: gym
+channels:
+- anaconda
+- conda-forge
+- defaults
+dependencies:
+- gym
+- pyglet
+- numpy
