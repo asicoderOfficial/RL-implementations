@@ -18,8 +18,28 @@ number_of_squares = 10
 grid_rectangles_width = round((abs(low[0] - high[0]))/number_of_squares, 3)
 grid_rectangles_height = round((abs(low[1] - high[1]))/number_of_squares, 3)
 grid_x = np.arange(start=low[0], stop=high[0], step=grid_rectangles_width)
+grid_x = [round(x, 2) for x in grid_x]
 grid_y = np.arange(start=low[1], stop=high[1], step=grid_rectangles_height)
-grid = list(zip(grid_x, grid_y))
+grid_y = [round(y, 2) for y in grid_y]
+grid = [(x, y) for x in grid_x for y in grid_y]
+
+
+def create_rectangle(down_left_x, down_left_y):
+    return [(down_left_x, down_left_y), \
+        (down_left_x, down_left_y + grid_rectangles_height), \
+        (down_left_x + grid_rectangles_width, down_left_y), \
+        (down_left_x + grid_rectangles_width, down_left_y + grid_rectangles_height)]
+
+
+def is_point_in_rectangle(x, y, down_left_x, down_left_y):
+    rectangle = create_rectangle(down_left_x, down_left_y)
+    return rectangle[0][0] <= x <= rectangle[2][0] and rectangle[0][1] <= y <= rectangle[1][1]
+
+
+def get_rectangle_for_point(x, y):
+    for down_left_x, down_left_y in grid:
+        if is_point_in_rectangle(x, y, down_left_x, down_left_y):
+            return down_left_x, down_left_y
 
 
 #Define starting probabilities: set all to equally probable.
