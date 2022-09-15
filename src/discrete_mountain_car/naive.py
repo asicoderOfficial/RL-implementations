@@ -76,3 +76,47 @@ class MCDNaive:
         for state_pos, state_vel in self.states:
             if state_pos <= position <= state_pos + self.positions_margin and state_vel <= velocity <= state_vel + self.velocities_margin:
                 return state_pos, state_vel
+
+
+
+class MCDNaiveMean(MCDNaive):
+
+    def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
+        super().__init__(n_splits, max_steps, max_iterations, results_path, stop_at_first_flag)
+    
+
+    def train(self) -> None:
+        for iteration in range(1, self.max_iterations + 1):
+            print(f'-------- Iteration {iteration} ----------')
+            pos, velocity = self.env.reset()
+            for step in range(self.max_steps):
+                curr_state = self.get_state_for_position_and_velocity(float(truncate(pos, 2)), float(truncate(velocity, 2)))
+                rewards = self.rewards[curr_state] 
+                if step == 0 and iteration == 1:
+                    #Start with a random action.
+                    action = self.env.action_space.sample()
+                else:
+                    #select the action with maximum reward
+                    action = max(rewards, key=rewards.get)
+                # apply the action
+                observation, reward, done, info = self.env.step(action)
+                #save the reward: mean of rewards
+                self.rewards[curr_state][action] = (self.rewards[curr_state][action] + reward) / 2
+                #update pos and velocity
+                pos = truncate(observation[0], 2)
+                velocity = truncate(observation[1], 2)
+                
+                # Render the self.env
+                self.env.render()
+
+                # Wait a bit before the next frame unless you want to see a crazy fast video
+                sleep(0.001)
+                
+                # If the epsiode is up, then start another one
+                if done and not info['TimeLimit.truncated']:
+                    if self.stop_at_first_flag:
+                        env.close()
+                        return
+                    else:
+                        #Termination, goal reached!
+                        break
