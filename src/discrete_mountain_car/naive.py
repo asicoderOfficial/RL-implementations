@@ -9,7 +9,7 @@ class MCDNaive:
     # Parent class of all naive implementations of the discrete mountain car problem.
 
     def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
-        """
+        """ Initialize the class.
 
         Args:
             n_splits (int): Number of equal splits of velocity and position.
@@ -27,6 +27,9 @@ class MCDNaive:
             ValueError: If max_iterations is not greater than 1.
             TypeError: If results_path is not a string.
             TypeError: If stop_at_first_flag is not a boolean.
+        
+        Returns:
+            None
         """        
         if not isinstance(n_splits, int): raise TypeError('n_splits must be an integer')
         if not 1 <= n_splits <= 30: raise ValueError('n_splits must be between 1 and 30')
@@ -126,6 +129,18 @@ class MCDNaive:
 class MCDNaiveMean(MCDNaive):
 
     def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
+        """ Initialize the class, using the parent class MCDNaive constructor.
+
+        Args:
+            n_splits (int): Number of equal splits of velocity and position.
+            max_steps (int): Maximum number of steps per iteration.
+            max_iterations (int): Maximum number of iterations.
+            results_path (str, optional): Where to store the training results. Defaults to ''.
+            stop_at_first_flag (bool, optional): Stop the first time is reached at training, or continue training. Defaults to False.
+        
+        Returns:
+            None
+        """
         super().__init__(n_splits, max_steps, max_iterations, results_path, stop_at_first_flag)
     
 
