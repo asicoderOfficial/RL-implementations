@@ -253,5 +253,4 @@ class MCDNaiveSin(MCDNaive):
         Returns:
             None
         """        
-        print(self.sin_reward_reducing, self.velocity_reward_reducing, self.flag_distance_mult)
         super().train(MCDNaiveSin._reward_function, **{'sin_reward_reducing': self.sin_reward_reducing, 'velocity_reward_reducing': self.velocity_reward_reducing, 'flag_distance_mult': self.flag_distance_mult, 'env_high_pos': self.env_high[0]})
