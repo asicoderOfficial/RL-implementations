@@ -1,10 +1,13 @@
 import gym
+from typing import Callable
 from time import sleep
 import numpy as np
 from src.utilities.numeric import truncate
 
 
 class MCDNaive:
+    # Parent class of all naive implementations of the discrete mountain car problem.
+
     def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
         """
 
@@ -78,14 +81,15 @@ class MCDNaive:
                 return state_pos, state_vel
 
 
+    def train(self, reward_function:Callable[[dict, tuple, int, float, dict], float], *args) -> None:
+        """ Train the agent.
 
-class MCDNaiveMean(MCDNaive):
-
-    def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
-        super().__init__(n_splits, max_steps, max_iterations, results_path, stop_at_first_flag)
-    
-
-    def train(self) -> None:
+        Args:
+            reward_function (Callable): Custom reward function.
+        
+        Returns:
+            None
+        """        
         for iteration in range(1, self.max_iterations + 1):
             print(f'-------- Iteration {iteration} ----------')
             pos, velocity = self.env.reset()
@@ -99,19 +103,16 @@ class MCDNaiveMean(MCDNaive):
                     #select the action with maximum reward
                     action = max(rewards, key=rewards.get)
                 # apply the action
-                observation, reward, done, info = self.env.step(action)
+                observation, gym_reward, done, info = self.env.step(action)
                 #save the reward: mean of rewards
-                self.rewards[curr_state][action] = (self.rewards[curr_state][action] + reward) / 2
+                self.rewards[curr_state][action] = reward_function(self.rewards, curr_state, action, gym_reward, *args)
                 #update pos and velocity
                 pos = truncate(observation[0], 2)
                 velocity = truncate(observation[1], 2)
-                
                 # Render the self.env
                 self.env.render()
-
                 # Wait a bit before the next frame unless you want to see a crazy fast video
                 sleep(0.001)
-                
                 # If the epsiode is up, then start another one
                 if done and not info['TimeLimit.truncated']:
                     if self.stop_at_first_flag:
@@ -120,3 +121,33 @@ class MCDNaiveMean(MCDNaive):
                     else:
                         #Termination, goal reached!
                         break
+
+
+class MCDNaiveMean(MCDNaive):
+
+    def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
+        super().__init__(n_splits, max_steps, max_iterations, results_path, stop_at_first_flag)
+    
+
+    def _reward_function(rewards: dict, curr_state:tuple, action:int, gym_reward:float) -> float:
+        """ Reward function for the naive mean.
+
+        Args:
+            rewards (dict): All rewards for all states and actions.
+            curr_state (tuple): Current state, tuple of (position, velocity).
+            action (int): Action taken.
+            gym_reward (float): The reward given by OpenAI Gym.
+
+        Returns:
+            float: Reward.
+        """        
+        return (rewards[curr_state][action] + gym_reward) / 2
+
+
+    def train(self) -> None:
+        """ Train the agent by maximizing the mean reward, calculated as the mean of the previous reward and the current reward.
+
+        Returns:
+            None
+        """        
+        super().train(MCDNaiveMean._reward_function)
