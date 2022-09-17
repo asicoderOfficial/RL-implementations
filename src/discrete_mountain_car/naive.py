@@ -224,6 +224,3 @@ class MCDNaiveSin(MCDNaive):
             None
         """        
         super().train(MCDNaiveSin._reward_function, **{'sin_reward_reducing': self.sin_reward_reducing, 'velocity_reward_reducing': self.velocity_reward_reducing, 'flag_distance_mult': self.flag_distance_mult, 'env_high_pos': self.env_high[0]})
-
-m = MCDNaiveMean(10, 1000, 1000, stop_at_first_flag=True)
-m.train()
