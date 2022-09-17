@@ -4,10 +4,11 @@ from time import sleep
 from numpy import arange
 from math import sin
 from src.utilities.numeric import truncate
+from src.discrete_mountain_car.mcd import MCD
 
 
 #TODO: Record training metrics
-class MCDNaive:
+class MCDNaive(MCD):
     # Parent class of all naive implementations of the discrete mountain car problem.
 
     def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
@@ -52,38 +53,7 @@ class MCDNaive:
         self.env = gym.make(env_id)
         self.env_high = self.env.observation_space.high
         self.env_low = self.env.observation_space.low
-        self.define_states()
-
-
-    def define_states(self) -> None:
-        """ Divide the space into equal n_splits of position on the x-axis and velocity.
-
-        Returns:
-            None
-        """        
-        self.positions_margin = round((abs(self.env_low[0] - self.env_high[0]))/self.n_splits, 3)
-        self.velocities_margin = round((abs(self.env_low[1] - self.env_high[1]))/self.n_splits, 3)
-        positions_splits = arange(start=self.env_low[0], stop=self.env_high[0], step=self.positions_margin)
-        positions_splits = [round(pos, 2) for pos in positions_splits]
-        velocities_splits = arange(start=self.env_low[1], stop=self.env_high[1], step=self.velocities_margin)
-        velocities_splits = [round(vel, 2) for vel in velocities_splits]
-        self.states = [(pos, vel) for pos in positions_splits for vel in velocities_splits]
-        self.rewards = {state : {0:0, 1:0, 2:0} for state in self.states}
-
-
-    def get_state_for_position_and_velocity(self, position:float, velocity:float) -> tuple:
-        """ Get the state for a given position and velocity.
-
-        Args:
-            position (float): Position on the x-axis.
-            velocity (float): Velocity of the car.
-
-        Returns:
-            tuple: State.
-        """        
-        for state_pos, state_vel in self.states:
-            if state_pos <= position <= state_pos + self.positions_margin and state_vel <= velocity <= state_vel + self.velocities_margin:
-                return state_pos, state_vel
+        super().define_states()
 
 
     def train(self, reward_function:Callable[[dict, tuple, int, float, dict], float], **kwargs) -> None:
@@ -122,7 +92,7 @@ class MCDNaive:
                 # If the epsiode is up, then start another one
                 if done and not info['TimeLimit.truncated']:
                     if self.stop_at_first_flag:
-                        env.close()
+                        self.env.close()
                         return
                     else:
                         #Termination, goal reached!
@@ -254,3 +224,6 @@ class MCDNaiveSin(MCDNaive):
             None
         """        
         super().train(MCDNaiveSin._reward_function, **{'sin_reward_reducing': self.sin_reward_reducing, 'velocity_reward_reducing': self.velocity_reward_reducing, 'flag_distance_mult': self.flag_distance_mult, 'env_high_pos': self.env_high[0]})
+
+m = MCDNaiveMean(10, 1000, 1000, stop_at_first_flag=True)
+m.train()
