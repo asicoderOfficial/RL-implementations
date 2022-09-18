@@ -1,7 +1,5 @@
-import gym
 from typing import Callable
 from time import sleep
-from numpy import arange
 from math import sin
 from src.utilities.numeric import truncate
 from src.discrete_mountain_car.mcd import MCD
@@ -11,20 +9,20 @@ from src.discrete_mountain_car.mcd import MCD
 class MCDNaive(MCD):
     # Parent class of all naive implementations of the discrete mountain car problem.
 
-    def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
+    def __init__(self, n_splits:int, max_steps:int, max_episodes:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
         """ Initialize the class.
 
         Args:
             n_splits (int): Number of equal splits of velocity and position.
-            max_steps (int): Maximum number of steps per iteration.
-            max_iterations (int): Maximum number of iterations.
+            max_steps (int): Maximum number of steps per episode.
+            max_episodes (int): Maximum number of episodes.
             results_path (str, optional): Where to store the training results. Defaults to ''.
             stop_at_first_flag (bool, optional): Stop the first time is reached at training, or continue training. Defaults to False.
 
         Returns:
             None
         """        
-        super().__init__(n_splits, max_steps, max_iterations, results_path, stop_at_first_flag)
+        super().__init__(n_splits, max_steps, max_episodes, results_path, stop_at_first_flag)
         super().define_states()
 
 
@@ -38,13 +36,13 @@ class MCDNaive(MCD):
         Returns:
             None
         """        
-        for iteration in range(1, self.max_iterations + 1):
-            print(f'-------- Iteration {iteration} ----------')
+        for episode in range(1, self.max_episodes + 1):
+            print(f'-------- Episode {episode} ----------')
             pos, velocity = self.env.reset()
             for step in range(1, self.max_steps + 1):
                 curr_state = self.get_state_for_position_and_velocity(float(truncate(pos, 2)), float(truncate(velocity, 2)))
                 rewards = self.rewards[curr_state] 
-                if step == 1 and iteration == 1:
+                if step == 1 and episode == 1:
                     #Start with a random action.
                     action = self.env.action_space.sample()
                 else:
@@ -70,24 +68,26 @@ class MCDNaive(MCD):
                         #Termination, goal reached!
                         break
 
+        self.env.close()
+
 
 class MCDNaiveMean(MCDNaive):
     # Naive mean reward
 
-    def __init__(self, n_splits:int, max_steps:int, max_iterations:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
+    def __init__(self, n_splits:int, max_steps:int, max_episodes:int, results_path:str='', stop_at_first_flag:bool=False) -> None:
         """ Initialize the class, using the parent class MCDNaive constructor.
 
         Args:
             n_splits (int): Number of equal splits of velocity and position.
-            max_steps (int): Maximum number of steps per iteration.
-            max_iterations (int): Maximum number of iterations.
+            max_steps (int): Maximum number of steps per episode.
+            max_episodes (int): Maximum number of episodes.
             results_path (str, optional): Where to store the training results. Defaults to ''.
             stop_at_first_flag (bool, optional): Stop the first time is reached at training, or continue training. Defaults to False.
         
         Returns:
             None
         """
-        super().__init__(n_splits, max_steps, max_iterations, results_path, stop_at_first_flag)
+        super().__init__(n_splits, max_steps, max_episodes, results_path, stop_at_first_flag)
     
 
     def _reward_function(rewards: dict, curr_state:tuple, action:int, gym_reward:float) -> float:
@@ -117,13 +117,13 @@ class MCDNaiveMean(MCDNaive):
 class MCDNaiveSin(MCDNaive):
     # Naive sin reward
 
-    def __init__(self, n_splits:int, max_steps:int, max_iterations:int, sin_reward_reducing:int=100, velocity_reward_reducing:int=100, flag_distance_mult:int=10, results_path:str='', stop_at_first_flag:bool=False) -> None:
+    def __init__(self, n_splits:int, max_steps:int, max_episodes:int, sin_reward_reducing:int=100, velocity_reward_reducing:int=100, flag_distance_mult:int=10, results_path:str='', stop_at_first_flag:bool=False) -> None:
         """ Initialize the class, using the parent class MCDNaive constructor.
 
         Args:
             n_splits (int): Number of equal splits of velocity and position.
-            max_steps (int): Maximum number of steps per iteration.
-            max_iterations (int): Maximum number of iterations.
+            max_steps (int): Maximum number of steps per episode.
+            max_episodes (int): Maximum number of episodes.
             sin_reward_reducing (int, optional): The bigger, the less the sin(position) rewards the agent. Defaults to 100.
             velocity_reward_reducing (int, optional): The bigger, the less the velocity rewards the agent. Defaults to 100.
             flag_distance_mult (int, optional): The bigger, the more the distance from the current position to the flag rewards the agent. Defaults to 10.
@@ -141,7 +141,7 @@ class MCDNaiveSin(MCDNaive):
         Returns:
             None
         """
-        super().__init__(n_splits, max_steps, max_iterations, results_path, stop_at_first_flag)
+        super().__init__(n_splits, max_steps, max_episodes, results_path, stop_at_first_flag)
         if not isinstance(sin_reward_reducing, int): raise TypeError('sin_reward_reducing must be an integer.')
         if not 10 <= sin_reward_reducing <= 1000: raise ValueError('sin_reward_reducing must be between 10 and 1000.')
         if not isinstance(velocity_reward_reducing, int): raise TypeError('velocity_reward_reducing must be an integer.')
@@ -196,6 +196,3 @@ class MCDNaiveSin(MCDNaive):
             None
         """        
         super().train(MCDNaiveSin._reward_function, **{'sin_reward_reducing': self.sin_reward_reducing, 'velocity_reward_reducing': self.velocity_reward_reducing, 'flag_distance_mult': self.flag_distance_mult, 'env_high_pos': self.env_high[0]})
-
-m = MCDNaiveMean(10, 1000, 10)
-m.train()
