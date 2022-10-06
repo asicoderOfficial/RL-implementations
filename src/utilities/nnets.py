@@ -36,15 +36,15 @@ def _define_activation_function(activation_function:str, *args:list, **kwargs:di
     if activation_function in _activation_functions_with_positional_arguments_set:
         #With positional arguments
         if len(kwargs) == 0 and len(args) == 0: raise ValueError(f'Activation function {activation_function} requires positional arguments')
-        if activation_function == 'multiheadattention' and ('embed_dim' not in kwargs or 'num_heads' not in kwargs) and len(args) != 2: raise ValueError(f'Activation function {activation_function} requires positional arguments embed_dim and num_heads')
-        else:
-            return nn.MultiheadAttention(*args, **kwargs)
-        if activation_function == 'threshold' and ('threshold' not in kwargs or 'value' not in kwargs) and len(args) != 2: raise ValueError(f'Activation function {activation_function} requires positional arguments threshold and value')
-        else:
-            return nn.Threshold(*args, **kwargs)
-        if activation_function == 'adaptivelogsoftmaxwithloss' and ('in_features' not in kwargs or 'n_classes' not in kwargs) and len(args) != 2: raise ValueError(f'Activation function {activation_function} requires positional arguments in_features and n_classes')
-        else:
-            return nn.AdaptiveLogSoftmaxWithLoss(*args, **kwargs)
+        if activation_function == 'multiheadattention':
+            if ('embed_dim' not in kwargs or 'num_heads' not in kwargs) and len(args) != 2: raise ValueError(f'Activation function {activation_function} requires positional arguments embed_dim and num_heads')
+            else: return nn.MultiheadAttention(*args, **kwargs)
+        if activation_function == 'threshold': 
+            if ('threshold' not in kwargs or 'value' not in kwargs) and len(args) != 2: raise ValueError(f'Activation function {activation_function} requires positional arguments threshold and value')
+            else:return nn.Threshold(*args, **kwargs)
+        if activation_function == 'adaptivelogsoftmaxwithloss': 
+            if ('in_features' not in kwargs or 'n_classes' not in kwargs) and len(args) != 2: raise ValueError(f'Activation function {activation_function} requires positional arguments in_features and n_classes')
+            else: return nn.AdaptiveLogSoftmaxWithLoss(*args, **kwargs)
 
     else: 
         #Without positional arguments. #TODO: Add non compulsory arguments to the remaining activation functions.
@@ -64,17 +64,15 @@ def _define_linear_layer(linear_layer:str, *args:list, **kwargs:dict):
         torch.nn child class: A linear layer object from torch.nn.
     """    
     if linear_layer not in _linear_layers_set: raise ValueError(f'The module {linear_layer} is not a linear layer. Check https://pytorch.org/docs/stable/nn.html#linear-layers for the full list of supported linear layers.')
-    if linear_layer == 'linear' and ('in_features' not in kwargs or 'out_features' not in kwargs) and (len(args) != 2):
-        raise ValueError(f'Linear layer {linear_layer} requires positional arguments in_features and out_features')
-    else:
-        return nn.Linear(*args, **kwargs)
-    if linear_layer == 'bilinear' and ('in1_features' not in kwargs or 'in2_features' not in kwargs or 'out_features' not in kwargs) and (len(args) != 3):
-        raise ValueError(f'Linear layer {linear_layer} requires positional arguments in1_features, in2_features and out_features.')
-    else:
-        return nn.Bilinear(*args, **kwargs)
-    if linear_layer == 'lazylinear' and ('out_features' not in kwargs) and (len(args) != 1): raise ValueError(f'Linear layer {linear_layer} requires positional argument out_features')
-    else:
-        return nn.LazyLinear(*args, **kwargs)
+    if linear_layer == 'linear':
+        if ('in_features' not in kwargs or 'out_features' not in kwargs) and (len(args) != 2): raise ValueError(f'Linear layer {linear_layer} requires positional arguments in_features and out_features')
+        else:return nn.Linear(*args, **kwargs)
+    if linear_layer == 'bilinear':
+        if ('in1_features' not in kwargs or 'in2_features' not in kwargs or 'out_features' not in kwargs) and (len(args) != 3): raise ValueError(f'Linear layer {linear_layer} requires positional arguments in1_features, in2_features and out_features.')
+        else: return nn.Bilinear(*args, **kwargs)
+    if linear_layer == 'lazylinear':
+        if ('out_features' not in kwargs) and (len(args) != 1): raise ValueError(f'Linear layer {linear_layer} requires positional argument out_features')
+        else: return nn.LazyLinear(*args, **kwargs)
     if linear_layer == 'identity':
         return nn.Identity(*args, **kwargs)
 
