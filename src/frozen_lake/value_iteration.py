@@ -164,7 +164,7 @@ while k <= 5:
     if optimal_actions == prev_optimal_actions:
         break
     else:
-        prev_optimal_actions = optimal_values
+        prev_optimal_actions = optimal_actions
 
     optimal_values, optimal_actions = value_iteration_recursive(0, 1, optimal_values, [], optimal_actions)
 
