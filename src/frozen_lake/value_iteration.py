@@ -55,7 +55,6 @@ class FLValueIteration(FrozenLake):
             if self.optimal_policy == prev_optimal_policy:
                 break
             prev_optimal_policy = self.optimal_policy.copy()
-        self.render_policy()
 
 
     def _value_iteration_iterative(env, theta:int, value_table:int, optimal_policy:list, transition_probability:float, discount_factor:float, map_size:int, is_slippery:bool) -> tuple:
@@ -75,7 +74,9 @@ class FLValueIteration(FrozenLake):
         while theta > delta:
             for s in range(map_size):
                 v = value_table[s]
-                action_value_dict = {action : sum([transition_probability * (FrozenLake._reward(s, map_size) + discount_factor * value_table[new_s]) for new_s in FrozenLake._movement(s, action, is_slippery, map_size)]) for action in FrozenLake._possible_actions(s, map_size)}
+                action_value_dict = {action : sum([transition_probability * \
+                    (FrozenLake._reward(s, map_size) + discount_factor * value_table[new_s]) for new_s in FrozenLake._movement(s, action, is_slippery, map_size)]) \
+                    for action in FrozenLake._possible_actions(s, map_size)}
                 value_table[s] = max(action_value_dict.values())
                 optimal_policy[s] = max(action_value_dict, key=action_value_dict.get)
                 delta = max(delta, abs(v - value_table[s]))

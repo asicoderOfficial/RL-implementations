@@ -96,6 +96,7 @@ class FrozenLake:
         new_pos = []
         i, j = FrozenLake._from_pos_to_coordinates(pos, map_size)
         possible_actions_list = FrozenLake._possible_actions(pos, map_size)
+        print(pos, action, possible_actions_list)
         #Non slippery case
         if action == 0:
             #Left
@@ -113,9 +114,9 @@ class FrozenLake:
             #Slippery case
             if action == 0 or action == 2:
                 if 1 in possible_actions_list:
-                    new_pos.append((i - 1) * sqrt(map_size) + j)
-                if 3 in possible_actions_list:
                     new_pos.append((i + 1) * sqrt(map_size) + j)
+                if 3 in possible_actions_list:
+                    new_pos.append((i - 1) * sqrt(map_size) + j)
             elif action == 1 or action == 3:
                 if 0 in possible_actions_list:
                     new_pos.append(i * sqrt(map_size) + j - 1)
@@ -123,6 +124,7 @@ class FrozenLake:
                     new_pos.append(i * sqrt(map_size) + j + 1)
         
         new_pos = list(map(int, new_pos))
+        print(new_pos)
         return new_pos
 
 
