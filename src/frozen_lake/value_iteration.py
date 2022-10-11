@@ -81,7 +81,3 @@ class FLValueIteration(FrozenLake):
                 delta = max(delta, abs(v - value_table[s]))
 
         return value_table, actions_table
-
-
-flv = FLValueIteration(is_slippery=False)
-flv.train()
