@@ -1,171 +1,87 @@
-
-#With value iteration (dynamic programming), we will compute all the subproblems until we fill the table, and then play the game, starting from s0,
-#as the table does not change
-PROBABILITY = 1
-DISCOUNT_FACTOR = 0.01
-ACTIONS = [0, 1, 2, 3]
-
-#Helper methods for this environment
-def possible_actions(i:int, j:int) -> list:
-    """ Given a position, return the list of possible actions available by their numeric codes.
-
-    Args:
-        i (int): Row index  of the position in the grid.
-        j (int): Column index of the position in the grid.
-
-    Returns:
-        list: The list of possible actions available at the current position.
-    """    
-    possible_actions_list = []
-    if i != 0:
-        possible_actions_list.append(3)
-    if i != 3:
-        possible_actions_list.append(1)
-    if j != 0:
-        possible_actions_list.append(0)
-    if j != 3:
-        possible_actions_list.append(2)
-    return possible_actions_list
+from src.frozen_lake.frozen_lake import FrozenLake
+from types import NoneType
+from typing import Union
 
 
-def movement(i:int, j:int, action:int) -> tuple:
-    """ Given a position and an action, return the new position.
+class FLValueIteration(FrozenLake):
+    def __init__(self, theta:float=0.01, max_iterations:int=10, discount_factor:float=0.99, desc:Union[int, NoneType]=None, map_name:str='4x4', is_slippery:bool=True) -> None:
+        """ Initialize the class.
 
-    Args:
-        i (int): Row index  of the position in the grid.
-        j (int): Column index of the position in the grid.
-        action (int): The action to be performed.
+        Args:
+            theta (float, optional): The difference threshold between the current value and the new value, for which at max, the algorithm will stop. Defaults to 0.01.
+            max_iterations (int, optional): The maximum number of iterations, times to repeat the value iteration algorithm. Defaults to 10.
+            discount_factor (float, optional): The discount factor. It makes more important the rewards from the start, and less the ones at the end. Defaults to 0.99.
+            desc (Union[int, NoneType], optional): The description of the map. Defaults to None.
+            map_name (str, optional): The name of the map. Defaults to '4x4'.
+            is_slippery (bool, optional): Whether the environment is slippery or not. Defaults to True.
+        
+        Raises:
+            TypeError: If theta is not a float.
+            ValueError: If max_iterations is not greater than 0.
+            ValueError: If theta is not greater than 0.
+        
+        Returns:
+            None
+        """
 
-    Returns:
-        tuple: The new position after performing the action.
-    """    
-    if action == 0:
-        #Left
-        j -= 1
-    elif action == 1:
-        #Down
-        i += 1
-    elif action == 2:
-        #Right
-        j += 1
-    else:
-        #Up
-        i -= 1
+        super().__init__(discount_factor=discount_factor, desc=desc, map_name=map_name, is_slippery=is_slippery)
 
-    return i, j
-            
+        if not isinstance(theta, float): raise TypeError('theta must be a float.')
+        if max_iterations <= 0: raise ValueError('max_iterations must be greater than 0.')
+        if theta <= 0: raise ValueError('theta must be greater than 0.')
 
+        self.theta = theta
+        self.max_iterations = max_iterations
+        self.value_table = [-1 for _ in range(self.map_size)]
+        self.actions_table = [-1 for _ in range(self.map_size)]
+        self.goal_state = 15 if map_name == '4x4' else 63
+    
 
-def reward(i:int, j:int) -> int:
-    """ Given a position, return the reward of the position.
-    Goal -> 1
-    The rest -> 0
+    def render_policy(self) -> None:
+        """ Render the policy. """
+        curr_cell = self.env.reset()
+        while curr_cell != self.goal_state:
+            action = self.actions_table[curr_cell]
+            curr_cell, _, _, _ = self.env.step(action)
+            self.env.render()
+        
 
-    Args:
-        i (int): Row index  of the position in the grid.
-        j (int): Column index of the position in the grid.
-
-    Returns:
-        int: The reward of the position.
-    """    
-    if i == 0 and j == 0:
-        #Starting point
-        return 0
-    if (i == 1 and j == 1) or \
-        (i == 1 and j == 3) or \
-        (i == 2 and j == 3) or \
-        (i == 3 and j == 0):
-        #Hole
-        return 0
-    if i == 3 and j == 3:
-        return 1
-    return 0
-
-
-def value_iteration_iterative(i:int, j:int, theta:int, value_table:int, actions_table:int) -> tuple:
-    """ Compute one iteration of the value iteration algorithm.
-
-    Args:
-        i (int): Row index  of the position in the grid.
-        j (int): Column index of the position in the grid.
-        theta (int): The difference threshold between the current value and the new value, for which at max, the algorithm will stop.
-        value_table (int): The value table, where the expected return of each state is stored.
-        actions_table (int): The actions table, where the best action for each state is stored.
-
-    Returns:
-        tuple: The value table and the actions table.
-    """    
-    delta = 0
-    while delta < theta:
-        for i in range(4):
-            for j in range(4):
-                v = value_table[i][j]
-                actions = possible_actions(i, j)
-                action_values = {}
-                for action in actions:
-                    new_i, new_j = movement(i, j, action)
-                    r = reward(new_i, new_j)
-                    action_values[action] = PROBABILITY * (r + DISCOUNT_FACTOR * value_table[new_i][new_j])
-                best_action = max(action_values, key=action_values.get)
-                value_table[i][j] = action_values[best_action]
-                actions_table[i][j] = best_action
-                delta = max(delta, abs(v - value_table[i][j]))
-
-    return value_table, actions_table
+    def train(self) -> None:
+        """ Train the model. """
+        self.env.reset()
+        prev_actions_table = self.actions_table.copy()
+        for _ in range(self.max_iterations):
+            self.value_table, self.actions_table = FLValueIteration._value_iteration_iterative(self.env, self.theta, self.value_table, self.actions_table, self.transition_probability, self.discount_factor, self.map_size, self.is_slippery)
+            if self.actions_table == prev_actions_table:
+                break
+            prev_actions_table = self.actions_table.copy()
+        self.render_policy()
 
 
-def value_iteration_recursive(i:int, j:int, v:int, curr_trajectory:int, actions:int) -> tuple:
-    """ Compute the value iteration algorithm recursively.
+    def _value_iteration_iterative(env, theta:int, value_table:int, actions_table:list, transition_probability:float, discount_factor:float, map_size:int, is_slippery:bool) -> tuple:
+        """ Compute one iteration of the value iteration algorithm.
 
-    Args:
-        i (int): Row index  of the position in the grid.
-        j (int): Column index of the position in the grid.
-        v (int): The values matrix, where the expected return of each state is stored.
-        curr_trajectory (int): All the states visited so far. Used to avoid infinite cycles.
-        actions (int): The actions matrix, where the best action for each state is stored.
+        Args:
+            i (int): Row index  of the position in the grid.
+            j (int): Column index of the position in the grid.
+            theta (int): The difference threshold between the current value and the new value, for which at max, the algorithm will stop.
+            value_table (int): The value table, where the expected return of each state is stored.
+            actions_table (list): The actions table, where the best action for each state is stored.
 
-    Returns:
-        tuple: The values matrix and the actions matrix.
-    """    
-    if i == 3 and j == 3:
-        return (v, actions)
+        Returns:
+            tuple: The value table and the actions table.
+        """    
+        delta = 0
+        while theta > delta:
+            for s in range(map_size):
+                v = value_table[s]
+                action_value_dict = {action : sum([transition_probability * (FrozenLake._reward(s, map_size) + discount_factor * value_table[new_s]) for new_s in FrozenLake._movement(s, action, is_slippery, map_size)]) for action in FrozenLake._possible_actions(s, map_size)}
+                value_table[s] = max(action_value_dict.values())
+                actions_table[s] = max(action_value_dict, key=action_value_dict.get)
+                delta = max(delta, abs(v - value_table[s]))
 
-    all_possible_actions = possible_actions(i, j) 
-    all_action_values = {}
-    new_i, new_j = (i+1, j) if i < 3 else (i, j+1)
-    for action in all_possible_actions:
-        if (new_i, new_j) not in curr_trajectory:
-            curr_trajectory += [(new_i, new_j)]
-            new_v = PROBABILITY * (reward(new_i, new_j) + DISCOUNT_FACTOR * value_iteration_recursive(new_i, new_j, v, curr_trajectory, actions)[0][new_i][new_j])
-            all_action_values[action] = new_v
-            v[i][j] = max(new_v, v[i][j])
-
-    if all_action_values != {}:
-        actions[i][j] = max(all_action_values, key=all_action_values.get)
-    return (v, actions)
+        return value_table, actions_table
 
 
-#It represents the optimal action for each i,j state (each cell the agent is at).
-#optimal_actions_table = [[-1] * 4] * 4
-optimal_values = [[-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, -1, 0]]
-optimal_actions =[[-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, -1, 0]] 
-prev_optimal_actions = []
-k = 1
-while k <= 5:
-    print(f'Iteration {k}')
-    print('VALUES')
-    for i in range(4):
-        print(optimal_values[i])
-    print()
-    print('ACTIONS')
-    for i in range(4):
-        print(optimal_actions[i])
-    print('---------')
-    if optimal_actions == prev_optimal_actions:
-        break
-    else:
-        prev_optimal_actions = optimal_actions
-
-    optimal_values, optimal_actions = value_iteration_recursive(0, 1, optimal_values, [], optimal_actions)
-
-    k += 1
+flv = FLValueIteration(is_slippery=False)
+flv.train()
