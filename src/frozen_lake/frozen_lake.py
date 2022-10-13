@@ -40,6 +40,8 @@ class FrozenLake:
         self.is_slippery = is_slippery
         self.transition_probability = 1/3 if is_slippery else 1
         self.discount_factor = discount_factor
+        self.actions_list = [0, 1, 2, 3]
+        self.n_actions = 4
         
 
     #Helper methods for this environment
@@ -96,20 +98,21 @@ class FrozenLake:
         new_pos = []
         i, j = FrozenLake._from_pos_to_coordinates(pos, map_size)
         possible_actions_list = FrozenLake._possible_actions(pos, map_size)
-        print(pos, action, possible_actions_list)
         #Non slippery case
-        if action == 0:
-            #Left
-            new_pos.append(i * sqrt(map_size) + j - 1)
-        elif action == 1:
-            #Down
-            new_pos.append((i + 1) * sqrt(map_size) + j)
-        elif action == 2:
-            #Right
-            new_pos.append(i * sqrt(map_size) + j + 1)
-        else:
-            #Up
-            new_pos.append((i - 1) * sqrt(map_size) + j)
+        if action in possible_actions_list:
+            #No random weird initialization
+            if action == 0:
+                #Left
+                new_pos.append(i * sqrt(map_size) + j - 1)
+            elif action == 1:
+                #Down
+                new_pos.append((i + 1) * sqrt(map_size) + j)
+            elif action == 2:
+                #Right
+                new_pos.append(i * sqrt(map_size) + j + 1)
+            else:
+                #Up
+                new_pos.append((i - 1) * sqrt(map_size) + j)
         if is_slippery:
             #Slippery case
             if action == 0 or action == 2:
@@ -124,7 +127,7 @@ class FrozenLake:
                     new_pos.append(i * sqrt(map_size) + j + 1)
         
         new_pos = list(map(int, new_pos))
-        print(new_pos)
+
         return new_pos
 
 
@@ -151,5 +154,6 @@ class FrozenLake:
             #Hole
             return -1
         if i == 3 and j == 3:
+            #Goal
             return 1
         return 0
