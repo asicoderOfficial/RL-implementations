@@ -1,7 +1,5 @@
 from itertools import count
-from numpy.random import dirichlet
 from src.frozen_lake.frozen_lake import FrozenLake
-from numpy import ones
 from random import choice
 from types import NoneType
 from typing import Union
@@ -36,26 +34,7 @@ class FLPolicyIteration(FrozenLake):
 
         self.theta = theta
         self.max_iterations = max_iterations
-        self.value_table = [-1 for _ in range(self.map_size)]
-        """
-        optimal_policy = []
-        for s in range(self.map_size):
-            curr_optimal_policy = []
-            possible_actions = FrozenLake._possible_actions(s, self.map_size)
-            #Use the dirichlet distribution, as all values are in range [0, 1] and sum up to 1.
-            random_possible_actions_probabilities = dirichlet(ones(len(possible_actions)), size=1)
-            random_possible_actions_idx = 0
-            for action in self.actions_list:
-                if action in possible_actions:
-                    #Add a random initial probability of picking that possible action.
-                    curr_optimal_policy.append(random_possible_actions_probabilities[0][random_possible_actions_idx])
-                    random_possible_actions_idx += 1
-                else:
-                    #It is not possible to pick that action, assign it the probability 0.
-                    curr_optimal_policy.append(0)
-            optimal_policy.append(curr_optimal_policy)
-        self.optimal_policy = optimal_policy
-        """
+        self.value_table = [-1 for _ in range(self.map_size) ]
         self.optimal_policy = [choice(self.actions_list) for _ in range(self.map_size)]
         self.goal_state = 15 if map_name == '4x4' else 63
     
@@ -74,8 +53,6 @@ class FLPolicyIteration(FrozenLake):
         self.env.reset()
         prev_optimal_policy = self.optimal_policy.copy()
         for i in range(self.max_iterations):
-            print()
-            print(i)
             self.value_table, self.optimal_policy = FLPolicyIteration._policy_iteration_iterative(self.env, self.theta, self.value_table, self.optimal_policy, self.transition_probability, self.discount_factor, self.map_size, self.is_slippery)
             if self.optimal_policy == prev_optimal_policy:
                 break
@@ -111,7 +88,14 @@ class FLPolicyIteration(FrozenLake):
             #Policy improvement
             for s in range(map_size):
                 old_action = optimal_policy[s]
-                action_value_dict = {action : sum([1 / len(FrozenLake._movement(s, action, is_slippery, map_size)) * (FrozenLake._reward(s, map_size) + discount_factor * value_table[new_s]) for new_s in FrozenLake._movement(s, action, is_slippery, map_size)]) for action in FrozenLake._possible_actions(s, map_size)}
+                new_s_probabilities = {}
+                action_value_dict = {}
+                for action in FrozenLake._possible_actions(s, map_size):
+                    reachable_states = FrozenLake._movement(s, action, is_slippery, map_size)
+                    for new_s in reachable_states:
+                        new_s_probabilities[new_s] = reachable_states.count(new_s) / len(reachable_states)
+                    action_value_dict[action] = sum([new_s_probabilities[new_s] * (FrozenLake._reward(new_s, map_size) + discount_factor * value_table[new_s]) for new_s in reachable_states])
+
                 optimal_policy[s] = max(action_value_dict, key=action_value_dict.get)
                 if old_action == optimal_policy[s]:
                     policy_stable = True
