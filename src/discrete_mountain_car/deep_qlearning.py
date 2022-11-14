@@ -51,3 +51,35 @@ class Agent:
         else:
             #Pick a random action, to explore
             return np.random.choice(self.action_space)
+
+
+    def decrement_epsilon(self):
+        self.epsilon = self.epsilon - self.epsilon_linear_decay if self.epsilon > self.epsilon_min else self.epsilon_min
+    
+
+    def learn(self, curr_state, action, reward, new_state):
+        #Zero out gradients, not to accumulate previous gradient descent progress
+        self.Q.optimizer.zero_grad()
+        #Convert the data provided to pytorch cuda tensors, so that they can be used for learning with the DQN, with the self.device specified (luckily, a gpu)
+        curr_states = torch.tensor(curr_state, dtype=torch.float).to(self.Q.device)
+        actions = torch.tensor(action, dtype=torch.uint8).to(self.Q.device)
+        rewards = torch.tensor(reward, dtype=torch.float).to(self.Q.device)
+        new_states = torch.tensor(new_state, dtype=torch.float).to(self.Q.device)
+
+        #Calculation of the target value:
+        #Calculate the q estimates, given the current state of the environment
+        q_estimates = self.Q.forward(curr_states)[actions]
+        #Calculate the maximal action for the agent's estimates value of the resulting states
+        q_next = self.Q.forward(new_states).max()
+        #Calculate what we want to get, the optimal value
+        q_target = reward + self.gamma * q_next
+
+        #Calculate the loss: distance (MSE) between the action the agent took, and the maximizing action the agent could have taken
+        loss = self.Q.loss_function(q_target, q_estimates).to(self.Q.device)
+
+        #Learn! Backpropagate
+        loss.backward()
+        self.Q.optimizer.step()
+        
+        #Decrement the value of epsilon, to little by little, start exploiting more and exploring less
+        self.decrement_epsilon()
