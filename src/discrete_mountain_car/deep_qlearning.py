@@ -5,10 +5,6 @@ import torch.optim as optim
 import numpy as np
 import pkg_resources
 
-print(pkg_resources.get_distribution("torch").version)
-
-print(torch.version.cuda)
-
 
 class DQN(nn.Module):
     def __init__(self, learning_rate:float=0.001) -> None:
