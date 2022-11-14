@@ -31,8 +31,23 @@ class DQN(nn.Module):
         return actions
 
 
-class NaiveDQLAgent():
-    def __init__(self, gamma:float=0.99, epsilon:float=0.95) -> None:
-        self.gamma
+class Agent:
+    def __init__(self, n_actions, learning_rate=0.001, gamma=0.99, epsilon=1.0, epsilon_linear_decay=1e-5, epsilon_min=0.01):
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.epsilon_linear_decay = epsilon_linear_decay
+        self.epsilon_min = epsilon_min
+        #Q network of the agent
+        self.Q = DQN(learning_rate)
+        #Set of possible actions
+        self.action_space = [i for i in range(n_actions)]
 
-
+    
+    def select_action(self, observation):
+        if np.random.random() > self.epsilon:
+            #Pick the best action, to exploit the policy
+            state = torch.tensor(observation, dtype=torch.float).to(self.Q.device)
+            return torch.argmax(self.Q.forward(state)).item()
+        else:
+            #Pick a random action, to explore
+            return np.random.choice(self.action_space)
